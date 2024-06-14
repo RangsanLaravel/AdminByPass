@@ -1,0 +1,95 @@
+﻿@model LoginViewModel
+
+@{
+    ViewData["Title"] = "Login Page";
+}
+
+@if (ViewBag.Token == null)
+{
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h1 class="text-center mb-4">Login</h1>
+                <div class="card">
+                    <div class="card-body">
+                        <form asp-action="Index" method="post">
+                            <div class="mb-3">
+                                <label asp-for="Username" class="form-label"></label>
+                                <input asp-for="Username" class="form-control" />
+                                <div class="text-danger">
+                                    <span asp-validation-for="Username"></span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="Password" class="form-label"></label>
+                                <input asp-for="Password" class="form-control" />
+                                <div class="text-danger">
+                                    <span asp-validation-for="Password"></span>
+                                </div>
+                            </div>
+                            @if (ViewBag.LoginFail != null)
+                            {
+                                <div class="text-danger">
+                                    <span>@ViewBag.LoginFail</span>
+                                </div>
+                            }
+                            <button type="submit" class="btn btn-primary w-100">Login</button>
+                        </form>
+                        <p class="text-center mt-3">Don't have an account? <a href="/Account/Register">Register here</a>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <form id="frm" asp-action="Privacy" asp-controller="Home" method="post" class="row g-3" asp-antiforgery="true">
+        <div class="col-md-6">
+            <label for="username" class="form-label">User Name</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+        </div>
+
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </form>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
+<script>
+    // Assuming you have a way to retrieve and store the JWT token
+    var token = '@ViewBag.Token';
+
+    // Add event listener for form submission
+        document.getElementById('frm').addEventListener('submit', function (event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        // Prepare the fetch request
+        fetch('@Url.Action("Privacy", "Home")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token // Add the JWT token as a Bearer token
+            },
+            body: JSON.stringify({
+                Username: document.getElementById('username').value
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                alert(data.message)
+                // Handle success response if needed
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert(error)
+                // Handle error response if needed
+            });
+    });
+</script>
