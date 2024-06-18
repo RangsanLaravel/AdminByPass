@@ -54,6 +54,20 @@ else
             <button type="submit" class="btn btn-primary">Submit</button>
         </div>
     </form>
+    <div class="container mt-5">
+        <h2 class="mb-4">Application List</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Application Description</th>
+                </tr>
+            </thead>
+            <tbody id="application">
+                <!-- Rows will be injected here by JavaScript -->
+            </tbody>
+        </table>
+    </div>
 }
 
 @section Scripts {
@@ -68,7 +82,7 @@ else
     // Add event listener for form submission
         document.getElementById('frm').addEventListener('submit', function (event) {
         event.preventDefault(); // Prevent the default form submission
-
+        
         // Prepare the fetch request
         fetch('@Url.Action("Privacy", "Home")', {
             method: 'POST',
@@ -82,8 +96,29 @@ else
         })
             .then(response => response.json())
             .then(data => {
-                console.log('Success:', data);
-                alert(data.message)
+                console.log('Success:', data);              
+                if (data.isSuccess) {
+                    alert(data.message)
+                    const tbody = document.getElementById('application');
+                    let tr = '';
+                    tbody.innerHTML = '';
+
+                    if (data.data) {
+                        for (let i=0; i < data.data.length; i++) {
+                            tr=`${tr}
+                            <th scope="row">${i + 1}</th>
+                            <td>
+                                            <a href="${data.data[i].application_link}" target="_blank">${data.data[i].application_description}</a>
+                            </td>
+                        `;
+                           
+                        }
+                        tbody.innerHTML = tr;
+                    }
+                }else{
+                    alert(data.message);
+                }
+                
                 // Handle success response if needed
             })
             .catch((error) => {

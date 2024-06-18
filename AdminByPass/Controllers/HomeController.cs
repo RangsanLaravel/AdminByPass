@@ -56,13 +56,23 @@ namespace AdminByPass.Controllers
         [HttpPost]
         public IActionResult Privacy([FromBody]LoginViewModel model)
         {
-           var result = UserLogin(model.Username, "",false);
+            var result = UserLogin(model.Username, "",false);
+            var applications = new List<tbm_application_center>();
+            bool isSuccess = false;
             string success = string.Empty;
             if (!string.IsNullOrWhiteSpace(result))
+            {
+               applications = GETAPPLICATION(model.Username);
+                if(applications is not null)
+                {
+                    applications.Select(a => { a.application_link = $"{a.application_link}?token={result}"; return a; }).ToList();
+                }
                 success = "ByPass Success";
+                isSuccess = true;
+            }
             else
                 success = "username Is valid";
-            return Json(new { Message = success });
+            return Json(new {isSuccess= isSuccess, Message = success,Data = applications });
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -133,6 +143,45 @@ namespace AdminByPass.Controllers
             return string.Empty;
         }
 
+        private List<tbm_application_center> GETAPPLICATION(string USERID)
+        {
+            var applications = new List<tbm_application_center>();
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+
+                SqlCommand command = new SqlCommand
+                {
+                    CommandType = System.Data.CommandType.Text,
+                    Connection = connection,
+                    CommandText = $@"select distinct application_description,
+application_link from [ISEE].dbo.tbt_application_role rl
+                    INNER JOIN [ISEE].dbo.tbm_application_center ap ON ap.application_id =rl.application_id and ap.application_status=1
+INNER JOIN [ISEE].dbo.tbm_employee te on te.user_id =rl.user_id
+                    WHERE rl.active_flg =1
+                    and te.status =1
+                    AND  te.user_name =@username"
+                };
+                command.Parameters.AddWithValue("@username", USERID);
+                using (var reader =  command.ExecuteReader())
+                {
+                    while ( reader.Read())
+                    {
+                        var application = new tbm_application_center
+                        {
+                            application_description = reader["application_description"].ToString(),
+                            application_link = reader["application_link"].ToString()
+ 
+                        };
+
+                        applications.Add(application);
+                    }
+                }
+
+            }
+            return applications;
+        }
         private string BuildToken(User employee)
         {
             // key is case-sensitive
